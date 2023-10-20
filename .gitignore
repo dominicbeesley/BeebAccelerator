@@ -5,3 +5,4 @@ iseconfig/
 not_in_git/
 a.out
 dump.vcd
+**/vunit_out/
