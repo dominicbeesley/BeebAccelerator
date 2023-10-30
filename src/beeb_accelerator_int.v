@@ -24,10 +24,16 @@
 
 
 module beeb_accelerator_int
+#(
+   parameter  MOS_INTERNAL = 0,
+   parameter  NPHI0_REGS = 6,
+   parameter  PHIOUT_TAP = 1,
+   parameter MODEL = 0,    
+   parameter IS_INTERNAL_LOOKAHEAD = 0,
+   parameter AGGRESSIVE = 0,
+   parameter FORCE_SLOW = 15
+)
 (
-
- // board clock
- input         clock,
 
  // pll clock
  input         cpu_clk,        
@@ -40,8 +46,9 @@ module beeb_accelerator_int
  input         NMI_n,
  output        Sync,
  output [15:0] Addr,
- output [1:0]  R_W_n,
- inout [7:0]   Data,
+ output        R_W_n,
+ output [7:0]  Data_O,
+ input  [7:0]  Data_I,
  input         SO_n,
  input         Res_n,
  input         Rdy,
@@ -62,19 +69,14 @@ module beeb_accelerator_int
 
  );
 
-   parameter  NPHI0_REGS = 6;
-   parameter  PHIOUT_TAP = 1;
-
-   parameter MODEL = 0;    
    localparam MODEL_BBC = 0;
    localparam MODEL_ELK = 1;
    localparam MODEL_MASTER = 2;
 
-   parameter IS_INTERNAL_LOOKAHEAD = 0;
-   parameter AGGRESSIVE = 0;
 
    localparam BASIC_ROM = MODEL == MODEL_ELK ? 11 : MODEL == MODEL_MASTER ? 12 : 15;
 
+   localparam force_slow_bits = $clog2(FORCE_SLOW+1);
 
    reg         tick;
    reg [5:0]   clk_div = 'b0;
@@ -100,11 +102,11 @@ module beeb_accelerator_int
    reg         cpu_NMI;
    reg         cpu_RDY;
    wire        cpu_SYNC;
-   reg [3:0]   force_slowdown = 4'b0;
+   reg [force_slow_bits-1:0]   force_slowdown = 4'b0;
 
    reg [7:0]   ram[0:65535];
-   reg [7:0]   ram_dout;
-   reg [7:0]   ram_dout2; // Second port to suport scrubbing RAM back to external RAM
+   wire [7:0]   ram_dout;
+   wire [7:0]   ram_dout2; // Second port to suport scrubbing RAM back to external RAM
 
    reg         ext_busy;
    reg         ext_cycle_start;
@@ -205,6 +207,8 @@ module beeb_accelerator_int
    wire        screen_wr_ext;
    wire        screen_rd_ext;
    wire        fsb_wren;
+wire is_internal;
+wire is_internal_next;
 
    generate if (MODEL == MODEL_MASTER) begin
       if (AGGRESSIVE) begin
@@ -226,7 +230,8 @@ module beeb_accelerator_int
 
    assign ram_cpu_A = cpu_AB_next;
    assign ram_cpu_D_wr = cpu_DO_next;
-   assign ram_cpu_we = cpu_WE_next && !cpu_AB_next[15] && (cpu_AB_next[14:12] < 3'b011 || fsb_wren);
+   //dom assign ram_cpu_we = is_internal_next && cpu_WE_next && !cpu_AB_next[15] && (cpu_AB_next[14:12] < 3'b011 || fsb_wren);
+   assign ram_cpu_we = is_internal_next && cpu_WE_next && cpu_clken;
    assign ram_dout = ram_cpu_D_rd;
 
    assign ram_dout2 = ram_scrub_D_rd;
@@ -296,7 +301,6 @@ module beeb_accelerator_int
          cpu_RDY <= Rdy;
    endgenerate
 
-wire is_internal;
 
 generate if (IS_INTERNAL_LOOKAHEAD) begin
 
@@ -310,7 +314,9 @@ generate if (IS_INTERNAL_LOOKAHEAD) begin
    wire       is_speed_latch_next  = (cpu_AB_next[15:4] == 12'hFE3) && (cpu_AB_next[3:2] == 2'b10);
 
    // Determine if the access is internal (fast) or external (slow)
-   wire is_internal_next
+   assign is_internal_next = (page < 8'h30) 
+               | (page >= 8'h80 && page < 8'hC0 && rom_latch_basic);
+   /*
      = !(
          (page >= 8'h30 && page < 8'h80 && (cpu_WE_next ? screen_wr_ext : screen_rd_ext)) |
       (  (MODEL == MODEL_MASTER)
@@ -336,7 +342,11 @@ generate if (IS_INTERNAL_LOOKAHEAD) begin
          (page >= 8'h80 && page < 8'hC0 && !rom_latch_basic) |
          // Accesses to IO are external
          (page >= 8'hfc && page < 8'hff)
-         ) |
+          
+      |
+         (!MOS_INTERNAL && page >= 8'hC0)
+      )
+      |
       (   (MODEL == MODEL_MASTER)
             // On the Master &FE34 is external
          ? is_speed_latch_next
@@ -344,14 +354,15 @@ generate if (IS_INTERNAL_LOOKAHEAD) begin
          : (is_shadow_latch_next | is_speed_latch_next)
       )
       ;
-
+   */
    always @(posedge cpu_clk)
      if (cpu_clken)
        r_is_internal <= is_internal_next;
 
 end else begin
 
-   wire [7:0]  page = cpu_AB[15:8];
+   wire [7:0]  page;
+   assign page = cpu_AB[15:8];
 
    // Determine if the access is internal (fast) or external (slow)
    assign is_internal
@@ -381,7 +392,9 @@ end else begin
          (page >= 8'h80 && page < 8'hC0 && !rom_latch_basic) |
          // Accesses to IO are external
          (page >= 8'hfc && page < 8'hff)
-         )
+      |
+         (!MOS_INTERNAL && page >= 8'hC0)     
+      )
       |
       (  (MODEL == MODEL_MASTER)
            // On the Master &FE34 is external
@@ -410,7 +423,8 @@ endgenerate
       if (ext_cycle_start) begin
          if (is_internal) begin
             beeb_AB  <=  {1'b0, scrub_AB};
-            beeb_WE  <=  1'b1;
+//DOM            beeb_WE  <=  1'b1;
+            beeb_WE  <=  1'b0;
             beeb_DO  <=  ram_dout2;
             ext_busy <=  1'b0;
             scrub_AB <=  scrub_AB + 1'b1;
@@ -431,7 +445,7 @@ endgenerate
       if (ext_cycle_end)
         if (cpu_AB == 16'hfe40 && cpu_WE)
           if (cpu_DO[2:0] == 0)
-            force_slowdown <= 'hf;
+            force_slowdown <= FORCE_SLOW;
           else
             force_slowdown <= 'h1;
         else if (force_slowdown > 0)
@@ -466,12 +480,12 @@ endgenerate
 
    // Sample Data on the falling edge of Phi2 (ref A in the datasheet)
    always @(negedge Phi2Out) begin
-      data_r <= Data;
+      data_r <= Data_I;
    end
 
-   assign Data    = (beeb_WE & PhiIn) ? beeb_DO : 8'bZ;
+   assign Data_O  = beeb_DO;
    assign Addr    = beeb_AB;
-   assign R_W_n   = {2{!beeb_WE}};
+   assign R_W_n   = !beeb_WE;
    assign Sync    = cpu_SYNC;
 
    // 65C02 Outputs

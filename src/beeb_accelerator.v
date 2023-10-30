@@ -118,6 +118,8 @@ module beeb_accelerator
    reg [0:7]            ram_cpu_D_rd;
    wire [0:15]          ram_scrub_A;
    reg [0:7]            ram_scrub_D_rd;
+   wire                 w_R_W_n;
+   wire [0:7]           w_Data_O;
 
    // PLL to generate CPU clock of 50 * DCM_MULT / DCM_DIV MHz
    DCM
@@ -176,7 +178,6 @@ beeb_accelerator_int
 int
 (
 
-   .clock(clock),
    .cpu_clk(cpu_clk),        
 
  // 6502 Signals
@@ -187,8 +188,9 @@ int
    .NMI_n(NMI_n),
    .Sync(Sync),
    .Addr(Addr),
-   .R_W_n(R_W_n),
-   .Data(Data),
+   .R_W_n(w_R_W_n),
+   .Data_I(Data),
+   .Data_O(w_Data_O),
    .SO_n(SO_n),
    .Res_n(Res_n),
    .Rdy(Rdy),
@@ -208,6 +210,10 @@ int
    .ram_cpu_D_rd(ram_cpu_D_rd)
 
  );
+
+assign Data = (w_R_W_n & PhiIn) ? w_Data_O : 8'bZ;
+
+assign R_W_n = 2{w_R_W_n};
 
    reg   [0:7] ram[0:65535];
 

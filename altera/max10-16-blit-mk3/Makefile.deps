@@ -1,0 +1,4 @@
+output_files/mk3_16_max.map.rpt: mk3blit.vhd pllmain.qip ram_fast_lo.qip ram_fast_hi.qip ram_fast_lo_tmp.qip
+output_files/mk3_16_max.map.rpt: ../../src/cpu_65c02.v ../../src/beeb_accelerator_int.v ../../src/ALU.v pllmain.qip ram_fast_lo.qip ram_fast_hi.qip ram_fast_lo_tmp.qip
+output_files/mk3_16_max.fit.rpt: mk3_16_max.sdc
+version.vhd: mk3blit.vhd pllmain.qip ram_fast_lo.qip ram_fast_hi.qip ram_fast_lo_tmp.qip
