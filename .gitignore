@@ -6,9 +6,10 @@ not_in_git/
 a.out
 dump.vcd
 **/vunit_out/
-altera/**/db/
-altera/**/incremental_db/
-altera/**/greybox_tmp/
-altera/**/output_files/
-altera/**/simulation/
+altera/*/db/
+altera/*/incremental_db/
+altera/*/greybox_tmp/
+altera/*/output_files/
+altera/*/simulation/
+altera/simulation/sim_asm/build
 altera/*/*.chg
