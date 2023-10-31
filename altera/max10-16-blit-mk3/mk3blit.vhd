@@ -54,8 +54,8 @@ entity mk3blit is
       G_JIM_DEVNO                   : std_logic_vector(7 downto 0) := x"D1";
 
       N_PHI_DLY                     : natural := 14;
-      N_PHI_TAP                     : natural := 1;
-      FORCE_SLOW                    : natural := 18
+      N_PHI_TAP                     : natural := 3;
+      FORCE_SLOW                    : natural := 24
    );
    port(
       -- crystal osc 48Mhz - on WS board
