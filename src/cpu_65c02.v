@@ -965,34 +965,52 @@ always @(posedge clk or posedge reset)
 `ifdef IMPLEMENT_NOPS
                 8'bxxxx_xx11:   state <= REG;   // (NOP1: 3/7/B/F column)
                 8'bxxx0_0010:   state <= FETCH; // (NOP2: 2 column, 4 column handled correctly below)
-                8'bx1x1_1100:   state <= ABS0;  // (NOP3: C column)
+                8'b0101_1100,
+                8'b1101_1100,
+                8'b1111_1100:   state <= ABS0;  // (NOP3: C column)
 `endif
                 8'b0x00_1000:   state <= PUSH0;
                 8'b0x10_1000:   state <= PULL0;
                 8'b0xx1_1000:   state <= REG;   // CLC, SEC, CLI, SEI
-                8'b11x0_00x0:   state <= FETCH; // IMM
-                8'b1x10_00x0:   state <= FETCH; // IMM
+                8'b11x0_0000:   state <= FETCH; // IMM
+                8'b1010_0000:   state <= FETCH; // IMM
                 8'b1xx0_1100:   state <= ABS0;  // X/Y abs
                 8'b1xxx_1000:   state <= REG;   // DEY, TYA, ...
                 8'bxxx0_0001:   state <= INDX0;
                 8'bxxx1_0010:   state <= IND0;  // (ZP) odd 2 column
                 8'b000x_0100:   state <= ZP0;   // TSB/TRB
-                8'bxxx0_01xx:   state <= ZP0;
+                8'b0010_0100,
+                8'b0100_0100,
+                8'b0110_0100,
+                8'b1000_0100,
+                8'b1010_0100,
+                8'b1100_0100,
+                8'b1110_0100,
+                8'bxxx0_0101,
+                8'bxxx0_0110:   state <= ZP0;
                 8'bxxx0_1001:   state <= FETCH; // IMM
                 8'bxxx0_1101:   state <= ABS0;  // even D column
                 8'bxxx0_1110:   state <= ABS0;  // even E column
                 8'bxxx1_0000:   state <= BRA0;  // odd 0 column (Branches)
                 8'b1000_0000:   state <= BRA0;  // BRA
                 8'bxxx1_0001:   state <= INDY0; // odd 1 column
-                8'bxxx1_01xx:   state <= ZPX0;  // odd 4,5,6,7 columns
+                8'b0011_0100,
+                8'b0101_0100,
+                8'b0111_0100,
+                8'b1001_0100,
+                8'b1011_0100,
+                8'b1101_0100,
+                8'b1111_0100,
+                8'bxxx1_0101,
+                8'bxxx1_0110:   state <= ZPX0;  // odd 4,5,6,7 columns
                 8'bxxx1_1001:   state <= ABSX0; // odd 9 column
                 8'bx011_1100:   state <= ABSX0; // C column BIT (3C), LDY (BC)
-                8'bxxx1_11x1:   state <= ABSX0; // odd D, F columns
-                8'bxxx1_111x:   state <= ABSX0; // odd E, F columns
+                8'bxxx1_1101:   state <= ABSX0; // odd D, F columns
+                8'bxxx1_1110:   state <= ABSX0; // odd E, F columns
                 8'bx101_1010:   state <= PUSH0; // PHX/PHY
                 8'bx111_1010:   state <= PULL0; // PLX/PLY
                 8'bx0xx_1010:   state <= REG;   // <shift> A, TXA, ...  NOP
-                8'bxxx0_1010:   state <= REG;   // <shift> A, TXA, ...  NOP
+                8'bx1x0_1010:   state <= REG;   // <shift> A, TXA, ...  NOP
             endcase
 
         ZP0     : state <= write_back ? READ : FETCH;
