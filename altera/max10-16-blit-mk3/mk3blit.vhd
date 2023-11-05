@@ -50,12 +50,10 @@ library work;
 entity mk3blit is
    generic (
       SIM                           : boolean := false;                    -- skip some stuff, i.e. slow sdram start up
-      CLOCKSPEED                    : natural := 100;                      -- fast clock speed in mhz          
-      G_JIM_DEVNO                   : std_logic_vector(7 downto 0) := x"D1";
 
-      N_PHI_DLY                     : natural := 14;
+      N_PHI_DLY                     : natural := 15;
       N_PHI_TAP                     : natural := 3;
-      FORCE_SLOW                    : natural := 24
+      FORCE_SLOW                    : natural := 22
    );
    port(
       -- crystal osc 48Mhz - on WS board

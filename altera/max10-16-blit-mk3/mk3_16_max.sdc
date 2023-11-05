@@ -20,7 +20,7 @@ create_clock -name {CLK_48M} -period 20.833 -waveform { 0.000 10.416 } [get_port
 # Create Generated Clock
 #**************************************************************
 
-create_generated_clock -name cpu_clk -source [get_ports {CLK_48M_i}] -divide_by 2 -multiply_by 5 [get_pins {pll|altpll_component|auto_generated|pll1|clk[0]}]
+create_generated_clock -name cpu_clk -source [get_ports {CLK_48M_i}] -divide_by 24 -multiply_by 55 [get_pins {pll|altpll_component|auto_generated|pll1|clk[0]}]
 
 
 
