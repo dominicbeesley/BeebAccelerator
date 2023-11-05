@@ -31,7 +31,8 @@ module beeb_accelerator_int
    parameter MODEL = 0,    
    parameter IS_INTERNAL_LOOKAHEAD = 0,
    parameter AGGRESSIVE = 0,
-   parameter FORCE_SLOW = 15
+   parameter FORCE_SLOW = 15,
+   parameter FAST_RAM_LOW_LIMIT = 8'h7C
 )
 (
 
@@ -317,7 +318,7 @@ generate if (IS_INTERNAL_LOOKAHEAD) begin
    wire       is_speed_latch_next  = (cpu_AB_next[15:4] == 12'hFE3) && (cpu_AB_next[3:2] == 2'b10);
 
    // Determine if the access is internal (fast) or external (slow)
-   assign is_internal_next = (page < 8'h7C) 
+   assign is_internal_next = (page < FAST_RAM_LOW_LIMIT) 
                | (page >= 8'h80 && page < 8'hC0 && rom_latch_basic);
    /*
      = !(
