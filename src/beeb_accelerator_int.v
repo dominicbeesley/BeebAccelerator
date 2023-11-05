@@ -297,8 +297,11 @@ wire is_internal_next;
       always @(Rdy)
          cpu_RDY = Rdy;
    else
-      always @(posedge Phi2Out)
-         cpu_RDY <= Rdy;
+//      always @(posedge Phi2Out)
+//         cpu_RDY <= Rdy;
+      always @(posedge cpu_clk)
+         if (Phi0_r[PHIOUT_TAP] & !Phi0_r[PHIOUT_TAP+1])
+               cpu_RDY <= Rdy;
    endgenerate
 
 
@@ -314,7 +317,7 @@ generate if (IS_INTERNAL_LOOKAHEAD) begin
    wire       is_speed_latch_next  = (cpu_AB_next[15:4] == 12'hFE3) && (cpu_AB_next[3:2] == 2'b10);
 
    // Determine if the access is internal (fast) or external (slow)
-   assign is_internal_next = (page < 8'h30) 
+   assign is_internal_next = (page < 8'h7C) 
                | (page >= 8'h80 && page < 8'hC0 && rom_latch_basic);
    /*
      = !(
@@ -479,9 +482,9 @@ endgenerate
    assign cpu_DI = is_internal ? ram_dout : data_r;
 
    // Sample Data on the falling edge of Phi2 (ref A in the datasheet)
-   always @(negedge Phi2Out) begin
-      data_r <= Data_I;
-   end
+   always @(posedge cpu_clk)
+      if (!Phi0_r[PHIOUT_TAP] & Phi0_r[PHIOUT_TAP+1])
+         data_r <= Data_I;
 
    assign Data_O  = beeb_DO;
    assign Addr    = beeb_AB;
