@@ -20,7 +20,7 @@ create_clock -name {CLK_50M} -period 20 -waveform { 0.000 10 } [get_ports {CLK_5
 # Create Generated Clock
 #**************************************************************
 
-create_generated_clock -name cpu_clk -source [get_ports {CLK_50M_i}] -divide_by 5 -multiply_by 12 [get_pins {pll|altpll_component|auto_generated|pll1|clk[0]}]
+create_generated_clock -name cpu_clk -source [get_ports {CLK_50M_i}] -divide_by 5 -multiply_by 13 [get_pins {pll|altpll_component|auto_generated|pll1|clk[0]}]
 
 
 
